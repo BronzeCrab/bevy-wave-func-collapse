@@ -34,7 +34,7 @@ struct Tile {
     collapsed: bool,
     options: Vec<Option>,
 }
-const DIM: usize = 2;
+const DIM: usize = 5;
 const SPRITE_SIZE: f32 = 50.;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -82,13 +82,16 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     for i in 0..DIM {
         let mut x_shift = 0.;
         for j in 0..DIM {
-            let ind: usize = i * DIM + j;
-            // println!("ind is {ind}");
+            let grid_ind: usize = i * DIM + j;
             let r_index = rand::rng().random_range(0..=sprites.len() - 1);
-            commands.spawn((
-                sprites[r_index].clone(),
-                Transform::from_xyz(x_shift, y_shift, 0.),
-            ));
+            let option: &Option = &grid[grid_ind].options[r_index];
+            let sprite = match option {
+                Option::Blank => &sprites[r_index],
+                Option::Down => &sprites[r_index],
+                Option::Left => &sprites[r_index],
+                Option::Right => &sprites[r_index],
+            };
+            commands.spawn((sprite.clone(), Transform::from_xyz(x_shift, y_shift, 0.)));
             x_shift += SPRITE_SIZE;
         }
         y_shift += SPRITE_SIZE;
