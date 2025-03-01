@@ -15,10 +15,23 @@ fn main() {
             }),
         )
         .add_systems(Startup, setup)
+        // .add_systems(Update, lol)
         .run();
 }
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
-    commands.spawn(Sprite::from_image(asset_server.load("down.png")));
+    commands.spawn((
+        Sprite::from_image(asset_server.load("down.png")),
+        Transform::from_xyz(100., 0., 0.),
+    ));
+    let sprite: Sprite = Sprite::from_image(asset_server.load("blank.png"));
+    println!("sprite: {:?}", sprite);
+    commands.spawn((sprite, Transform::from_xyz(30., 0., 0.)));
+}
+
+fn lol(_time: Res<Time>, mut sprite_position: Query<&mut Sprite>) {
+    for transform in &mut sprite_position {
+        println!("{:?}", transform);
+    }
 }
