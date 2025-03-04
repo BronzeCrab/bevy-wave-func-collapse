@@ -153,7 +153,7 @@ fn all_cell_collapsed(grid: &Vec<Tile>) -> bool {
     return true;
 }
 
-fn do_collapse_random_with_low_entropy(grid: &mut Vec<Tile>) -> (usize, usize) {
+fn find_random_tile_with_low_entropy(grid: &Vec<Tile>) -> usize {
     let mut lowest_entropy: usize = usize::MAX;
     for i in 0..DIM {
         for j in 0..DIM {
@@ -183,27 +183,59 @@ fn do_collapse_random_with_low_entropy(grid: &mut Vec<Tile>) -> (usize, usize) {
     }
     let r_index = rand::rng().random_range(0..=indexes_2_collapse.len() - 1);
     let ind_2_collapase: usize = indexes_2_collapse[r_index];
-    let tile: &mut Tile = &mut grid[ind_2_collapase];
-    tile.collapsed = true;
+
+    return ind_2_collapase;
+}
+
+fn shuffle_tile_options(grid: &mut Vec<Tile>, tile_ind: usize) {
+    let tile: &mut Tile = &mut grid[tile_ind];
 
     if tile.options.len() <= 0 {
         panic!("ERROR: tile {:?} has zero TileOptions", tile);
     }
-    // TODO: here we need not just take random, but also check if this
-    // TileOptions is ineed possible!
-    let mut rng = rand::rng();
+    // here we need not just take random, but also check if this
+    // TileOptions is indeed possible!
+    let mut rng: ThreadRng = rand::rng();
     tile.options.shuffle(&mut rng);
+}
+
+fn find_proper_tile_option(grid: &Vec<Tile>, tile_ind: usize) -> TileOption {
     let mut opt_to_collapse: Option<TileOption> = None;
+
+    let tile: &Tile = &grid[tile_ind];
     for opt in &tile.options {
-        // TODO: check opt for possible collapse
-        opt_to_collapse = Some(opt.clone());
-        break;
+        // check opt for possible collapse
+        for i in 0..DIM {
+            for j in 0..DIM {
+                if i == tile.i && j == tile.j {
+                    // check left cell:
+                    let poss_left_i: i32 = i as i32;
+                    let poss_left_j: i32 = j as i32 - 1;
+                    if check_possible_i_and_j(poss_left_i, poss_left_j) {
+                        let left_ind: i32 = poss_left_i * (DIM as i32) + poss_left_j;
+                        let left_tile: &Tile = &grid[left_ind as usize];
+                    }
+                }
+            }
+            //     opt_to_collapse = Some(opt.clone());
+            //     break;
+            // }
+        }
     }
     if opt_to_collapse == None {
         panic!("ERROR: cant find TileOption to collapse tile {:?}", tile);
     }
-    tile.options = vec![opt_to_collapse.unwrap()];
+    opt_to_collapse.unwrap()
+}
 
+fn do_collapse_tile(
+    grid: &mut Vec<Tile>,
+    tile_ind: usize,
+    opt_to_collapse: TileOption,
+) -> (usize, usize) {
+    let tile: &mut Tile = &mut grid[tile_ind];
+    tile.options = vec![opt_to_collapse];
+    tile.collapsed = true;
     (tile.i, tile.j)
 }
 
@@ -279,7 +311,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     println!("entering the loop...");
     // third stage, main loop
     while !all_cell_collapsed(&grid) {
-        let i_j_tuple: (usize, usize) = do_collapse_random_with_low_entropy(&mut grid);
+        let tile_ind: usize = find_random_tile_with_low_entropy(&grid);
+        shuffle_tile_options(&mut grid, tile_ind);
+        let tile_opt: TileOption = find_proper_tile_option(&grid, tile_ind);
+        let i_j_tuple: (usize, usize) = do_collapse_tile(&mut grid, tile_ind, tile_opt);
         println!("grid after do_collapse_random_with_low_entropy {:?}", grid);
         update_near_cells_options(&mut grid, i_j_tuple.0, i_j_tuple.1);
         println!("grid after update_near_cells_TileOptions {:?}", grid);
