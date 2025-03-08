@@ -38,7 +38,7 @@ struct Tile {
     i: usize,
     j: usize,
 }
-const DIM: usize = 3;
+const DIM: usize = 5;
 const SPRITE_SIZE: f32 = 50.;
 
 fn check_possible_i_and_j(i: i32, j: i32) -> bool {
@@ -54,9 +54,6 @@ fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
         if b.contains(&a_opt) {
             res.push(a_opt);
         }
-    }
-    if res.len() == 0 {
-        panic!("Can't find intersection");
     }
     res
 }
@@ -119,6 +116,9 @@ fn update_near_cells_options(
                     if !left_cell.collapsed {
                         left_cell.options =
                             find_intesection(left_cell.options.clone(), new_left_cell_opt);
+                        if left_cell.options.len() == 0 {
+                            panic!("No options for left cell");
+                        }
                     }
                 }
 
@@ -132,6 +132,9 @@ fn update_near_cells_options(
                     if !right_cell.collapsed {
                         right_cell.options =
                             find_intesection(right_cell.options.clone(), new_right_cell_opt);
+                        if right_cell.options.len() == 0 {
+                            panic!("No options for right cell");
+                        }
                     }
                 }
 
@@ -145,6 +148,9 @@ fn update_near_cells_options(
                     if !top_cell.collapsed {
                         top_cell.options =
                             find_intesection(top_cell.options.clone(), new_top_cell_opt);
+                        if top_cell.options.len() == 0 {
+                            panic!("No options for top cell");
+                        }
                     }
                 }
 
@@ -158,6 +164,9 @@ fn update_near_cells_options(
                     if !bottom_cell.collapsed {
                         bottom_cell.options =
                             find_intesection(bottom_cell.options.clone(), new_bottom_cell_opt);
+                        if bottom_cell.options.len() == 0 {
+                            panic!("No options for bottom cell");
+                        }
                     }
                 }
             }
