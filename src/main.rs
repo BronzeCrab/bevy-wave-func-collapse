@@ -30,7 +30,7 @@ enum TileOption {
     Right,
     Up,
 }
-const NUM_OF_OPTIONS: u8 = 4;
+const NUM_OF_OPTIONS: u8 = 5;
 
 #[derive(Debug, Clone)]
 struct Tile {
@@ -63,23 +63,23 @@ fn get_possible_options(tile_opt: &TileOption, side: &str) -> Vec<TileOption> {
     if side == "left" {
         match tile_opt {
             TileOption::Blank => vec![TileOption::Blank, TileOption::Left],
-            TileOption::Down => vec![TileOption::Down, TileOption::Right],
-            TileOption::Left => vec![TileOption::Down, TileOption::Right],
+            TileOption::Down => vec![TileOption::Down, TileOption::Right, TileOption::Up],
+            TileOption::Left => vec![TileOption::Down, TileOption::Right, TileOption::Up],
             TileOption::Right => vec![TileOption::Blank, TileOption::Left],
-            TileOption::Up => vec![TileOption::Right, TileOption::Down],
+            TileOption::Up => vec![TileOption::Right, TileOption::Down, TileOption::Up],
         }
     } else if side == "right" {
         match tile_opt {
             TileOption::Blank => vec![TileOption::Blank, TileOption::Right],
-            TileOption::Down => vec![TileOption::Down, TileOption::Left],
+            TileOption::Down => vec![TileOption::Down, TileOption::Left, TileOption::Right],
             TileOption::Left => vec![TileOption::Blank, TileOption::Right],
-            TileOption::Right => vec![TileOption::Down, TileOption::Left],
-            TileOption::Up => vec![TileOption::Left, TileOption::Down],
+            TileOption::Right => vec![TileOption::Down, TileOption::Left, TileOption::Up],
+            TileOption::Up => vec![TileOption::Left, TileOption::Down, TileOption::Up],
         }
     } else if side == "top" {
         match tile_opt {
-            TileOption::Blank => vec![TileOption::Blank],
-            TileOption::Down => vec![TileOption::Blank],
+            TileOption::Blank => vec![TileOption::Blank, TileOption::Up],
+            TileOption::Down => vec![TileOption::Blank, TileOption::Up],
             TileOption::Left => {
                 vec![TileOption::Down, TileOption::Left, TileOption::Right]
             }
@@ -91,9 +91,9 @@ fn get_possible_options(tile_opt: &TileOption, side: &str) -> Vec<TileOption> {
     } else if side == "btm" {
         match tile_opt {
             TileOption::Blank => vec![TileOption::Blank, TileOption::Down],
-            TileOption::Down => vec![TileOption::Left, TileOption::Right],
-            TileOption::Left => vec![TileOption::Left, TileOption::Right],
-            TileOption::Right => vec![TileOption::Left, TileOption::Right],
+            TileOption::Down => vec![TileOption::Left, TileOption::Right, TileOption::Up],
+            TileOption::Left => vec![TileOption::Left, TileOption::Right, TileOption::Up],
+            TileOption::Right => vec![TileOption::Left, TileOption::Right, TileOption::Up],
             TileOption::Up => vec![TileOption::Blank, TileOption::Down],
         }
     } else {
@@ -216,7 +216,7 @@ fn find_random_tile_with_low_entropy(grid: &Vec<Tile>) -> usize {
     if indexes_2_collapse.len() <= 0 {
         panic!("ERROR: indexes_2_collapse is empty");
     }
-    let r_index = rand::rng().random_range(0..=indexes_2_collapse.len() - 1);
+    let r_index: usize = rand::rng().random_range(0..=indexes_2_collapse.len() - 1);
     let ind_2_collapase: usize = indexes_2_collapse[r_index];
 
     return ind_2_collapase;
@@ -418,6 +418,7 @@ fn main() {
                         1 => TileOption::Down,
                         2 => TileOption::Left,
                         3 => TileOption::Right,
+                        4 => TileOption::Up,
                         _ => panic!(),
                     };
                     grid.push(Tile {
@@ -434,6 +435,7 @@ fn main() {
                             TileOption::Down,
                             TileOption::Left,
                             TileOption::Right,
+                            TileOption::Up,
                         ],
                         i: i,
                         j: j,
@@ -483,6 +485,7 @@ fn main() {
     //                 TileOption::Down => &sprites[1],
     //                 TileOption::Left => &sprites[2],
     //                 TileOption::Right => &sprites[3],
+    //                 TileOption::Up => &sprites[4],
     //             };
     //             commands.spawn((sprite.clone(), Transform::from_xyz(x_shift, -y_shift, 0.)));
     //         } else {
