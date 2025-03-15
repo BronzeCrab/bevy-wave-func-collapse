@@ -42,13 +42,6 @@ struct Tile {
 const DIM: usize = 3;
 const SPRITE_SIZE: f32 = 50.;
 
-fn check_possible_i_and_j(i: i32, j: i32) -> bool {
-    if i >= 0 && j >= 0 && i < DIM as i32 && j < DIM as i32 {
-        return true;
-    }
-    false
-}
-
 fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
     let mut res: Vec<TileOption> = vec![];
     for a_opt in a {
@@ -71,7 +64,7 @@ fn get_possible_options(tile_opt: &TileOption, side: &str) -> Vec<TileOption> {
     } else if side == "right" {
         match tile_opt {
             TileOption::Blank => vec![TileOption::Blank, TileOption::Right],
-            TileOption::Down => vec![TileOption::Down, TileOption::Left, TileOption::Right],
+            TileOption::Down => vec![TileOption::Down, TileOption::Left, TileOption::Up],
             TileOption::Left => vec![TileOption::Blank, TileOption::Right],
             TileOption::Right => vec![TileOption::Down, TileOption::Left, TileOption::Up],
             TileOption::Up => vec![TileOption::Left, TileOption::Down, TileOption::Up],
@@ -113,7 +106,7 @@ fn update_near_cells_options(
 
                 let poss_left_i: i32 = i as i32;
                 let poss_left_j: i32 = j as i32 - 1;
-                if check_possible_i_and_j(poss_left_i, poss_left_j) {
+                if poss_left_j >= 0 {
                     let left_ind: i32 = poss_left_i * (DIM as i32) + poss_left_j;
                     let left_cell: &mut Tile = &mut grid[left_ind as usize];
                     let new_left_cell_opt: Vec<TileOption> =
@@ -129,7 +122,7 @@ fn update_near_cells_options(
 
                 let poss_right_i: i32 = i as i32;
                 let poss_right_j: i32 = j as i32 + 1;
-                if check_possible_i_and_j(poss_right_i, poss_right_j) {
+                if poss_right_j < DIM as i32 {
                     let right_ind: i32 = poss_right_i * (DIM as i32) + poss_right_j;
                     let right_cell: &mut Tile = &mut grid[right_ind as usize];
                     let new_right_cell_opt: Vec<TileOption> =
@@ -145,7 +138,7 @@ fn update_near_cells_options(
 
                 let poss_top_i: i32 = i as i32 - 1;
                 let poss_top_j: i32 = j as i32;
-                if check_possible_i_and_j(poss_top_i, poss_top_j) {
+                if poss_top_i >= 0 {
                     let top_ind: i32 = poss_top_i * (DIM as i32) + poss_top_j;
                     let new_top_cell_opt: Vec<TileOption> =
                         get_possible_options(&collapsed_cell.options[0], "top");
@@ -161,7 +154,7 @@ fn update_near_cells_options(
 
                 let poss_btm_i: i32 = i as i32 + 1;
                 let poss_btm_j: i32 = j as i32;
-                if check_possible_i_and_j(poss_btm_i, poss_btm_j) {
+                if poss_btm_i < DIM as i32 {
                     let bottom_ind: i32 = poss_btm_i * (DIM as i32) + poss_btm_j;
                     let new_bottom_cell_opt: Vec<TileOption> =
                         get_possible_options(&collapsed_cell.options[0], "btm");
@@ -248,96 +241,132 @@ fn find_proper_tile_option(grid: &Vec<Tile>, tile_ind: usize) -> TileOption {
                     let mut top_side_is_ok: bool = false;
                     let mut btm_side_is_ok: bool = false;
 
-                    // check left cell:
+                    // go to the left and check all left cells:
                     let poss_left_i: i32 = i as i32;
-                    let poss_left_j: i32 = j as i32 - 1;
-                    if check_possible_i_and_j(poss_left_i, poss_left_j) {
-                        let left_ind: i32 = poss_left_i * (DIM as i32) + poss_left_j;
-                        let left_tile: &Tile = &grid[left_ind as usize];
-                        if !left_tile.collapsed {
+                    let mut poss_left_j: i32 = j as i32 - 1;
+                    if poss_left_j >= 0 {
+                        let mut current_tile_opt: &TileOption = tile_to_collapse_opt;
+                        let mut intersect: Vec<TileOption> = vec![];
+                        while poss_left_j >= 0 {
+                            let left_ind: i32 = poss_left_i * (DIM as i32) + poss_left_j;
+                            let left_tile: &Tile = &grid[left_ind as usize];
                             let left_possible_opts: Vec<TileOption> =
-                                get_possible_options(tile_to_collapse_opt, "left");
-                            let intersect: Vec<TileOption> =
+                                get_possible_options(current_tile_opt, "left");
+                            intersect =
                                 find_intesection(left_tile.options.clone(), left_possible_opts);
-                            if intersect.len() > 0 {
+                            if intersect.len() == 0 {
+                                left_side_is_ok = false;
+                                break;
+                            } else if intersect.len() == 1 {
+                                current_tile_opt = &intersect[0];
                                 left_side_is_ok = true;
                             } else {
-                                continue;
+                                left_side_is_ok = true;
+                                break;
                             }
-                        } else {
-                            left_side_is_ok = true;
+                            poss_left_j -= 1;
                         }
                     } else {
                         left_side_is_ok = true;
                     }
+                    if !left_side_is_ok {
+                        continue;
+                    }
 
-                    // check right cell
+                    // go to the right and check all right cells:
                     let poss_right_i: i32 = i as i32;
-                    let poss_right_j: i32 = j as i32 + 1;
-                    if check_possible_i_and_j(poss_right_i, poss_right_j) {
-                        let right_ind: i32 = poss_right_i * (DIM as i32) + poss_right_j;
-                        let right_tile: &Tile = &grid[right_ind as usize];
-                        if !right_tile.collapsed {
+                    let mut poss_right_j: i32 = j as i32 + 1;
+                    if poss_right_j < DIM as i32 {
+                        let mut current_tile_opt: &TileOption = tile_to_collapse_opt;
+                        let mut intersect: Vec<TileOption> = vec![];
+                        while poss_right_j < DIM as i32 {
+                            let right_ind: i32 = poss_right_i * (DIM as i32) + poss_right_j;
+                            let right_tile: &Tile = &grid[right_ind as usize];
                             let right_possible_opts: Vec<TileOption> =
-                                get_possible_options(tile_to_collapse_opt, "right");
-                            let intersect: Vec<TileOption> =
+                                get_possible_options(current_tile_opt, "right");
+                            intersect =
                                 find_intesection(right_tile.options.clone(), right_possible_opts);
-                            if intersect.len() > 0 {
+                            if intersect.len() == 0 {
+                                right_side_is_ok = false;
+                                break;
+                            } else if intersect.len() == 1 {
+                                current_tile_opt = &intersect[0];
                                 right_side_is_ok = true;
                             } else {
-                                continue;
+                                right_side_is_ok = true;
+                                break;
                             }
-                        } else {
-                            right_side_is_ok = true;
+                            poss_right_j += 1;
                         }
                     } else {
                         right_side_is_ok = true;
                     }
+                    if !right_side_is_ok {
+                        continue;
+                    }
 
-                    // check top cell
-                    let poss_top_i: i32 = i as i32 - 1;
+                    // go to the top and check all top cells:
+                    let mut poss_top_i: i32 = i as i32 - 1;
                     let poss_top_j: i32 = j as i32;
-                    if check_possible_i_and_j(poss_top_i, poss_top_j) {
-                        let top_ind: i32 = poss_top_i * (DIM as i32) + poss_top_j;
-                        let top_tile: &Tile = &grid[top_ind as usize];
-                        if !top_tile.collapsed {
+                    if poss_top_i >= 0 {
+                        let mut current_tile_opt: &TileOption = tile_to_collapse_opt;
+                        let mut intersect: Vec<TileOption> = vec![];
+                        while poss_top_i >= 0 {
+                            let top_ind: i32 = poss_top_i * (DIM as i32) + poss_top_j;
+                            let top_tile: &Tile = &grid[top_ind as usize];
                             let top_possible_opts: Vec<TileOption> =
-                                get_possible_options(tile_to_collapse_opt, "top");
-                            let intersect: Vec<TileOption> =
+                                get_possible_options(current_tile_opt, "top");
+                            intersect =
                                 find_intesection(top_tile.options.clone(), top_possible_opts);
-                            if intersect.len() > 0 {
+                            if intersect.len() == 0 {
+                                top_side_is_ok = false;
+                                break;
+                            } else if intersect.len() == 1 {
+                                current_tile_opt = &intersect[0];
                                 top_side_is_ok = true;
                             } else {
-                                continue;
+                                top_side_is_ok = true;
+                                break;
                             }
-                        } else {
-                            top_side_is_ok = true;
+                            poss_top_i -= 1;
                         }
                     } else {
                         top_side_is_ok = true;
                     }
+                    if !top_side_is_ok {
+                        continue;
+                    }
 
-                    // check btm cell
-                    let poss_btm_i: i32 = i as i32 + 1;
+                    // go to the btm and check all btm cells:
+                    let mut poss_btm_i: i32 = i as i32 + 1;
                     let poss_btm_j: i32 = j as i32;
-                    if check_possible_i_and_j(poss_btm_i, poss_btm_j) {
-                        let btm_ind: i32 = poss_btm_i * (DIM as i32) + poss_btm_j;
-                        let btm_tile: &Tile = &grid[btm_ind as usize];
-                        if !btm_tile.collapsed {
+                    if poss_btm_i < DIM as i32 {
+                        let mut current_tile_opt: &TileOption = tile_to_collapse_opt;
+                        let mut intersect: Vec<TileOption> = vec![];
+                        while poss_btm_i < DIM as i32 {
+                            let btm_ind: i32 = poss_btm_i * (DIM as i32) + poss_btm_j;
+                            let btm_tile: &Tile = &grid[btm_ind as usize];
                             let btm_possible_opts: Vec<TileOption> =
-                                get_possible_options(tile_to_collapse_opt, "btm");
-                            let intersect: Vec<TileOption> =
+                                get_possible_options(current_tile_opt, "btm");
+                            intersect =
                                 find_intesection(btm_tile.options.clone(), btm_possible_opts);
-                            if intersect.len() > 0 {
+                            if intersect.len() == 0 {
+                                btm_side_is_ok = false;
+                                break;
+                            } else if intersect.len() == 1 {
+                                current_tile_opt = &intersect[0];
                                 btm_side_is_ok = true;
                             } else {
-                                continue;
+                                btm_side_is_ok = true;
+                                break;
                             }
-                        } else {
-                            btm_side_is_ok = true;
+                            poss_btm_i += 1;
                         }
                     } else {
                         btm_side_is_ok = true;
+                    }
+                    if !btm_side_is_ok {
+                        continue;
                     }
 
                     if left_side_is_ok && right_side_is_ok && top_side_is_ok && btm_side_is_ok {
