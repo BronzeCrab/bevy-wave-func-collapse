@@ -5,22 +5,22 @@ use bevy::prelude::*;
 use bevy::render::settings::*;
 use bevy::render::RenderPlugin;
 
-// fn main() {
-//     App::new()
-//         .add_plugins(
-//             DefaultPlugins.set(RenderPlugin {
-//                 render_creation: WgpuSettings {
-//                     backends: Some(Backends::VULKAN),
-//                     ..default()
-//                 }
-//                 .into(),
-//                 ..default()
-//             }),
-//         )
-//         .add_systems(Startup, setup)
-//         // .add_systems(Update, update)
-//         .run();
-// }
+fn main() {
+    App::new()
+        .add_plugins(
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: WgpuSettings {
+                    backends: Some(Backends::VULKAN),
+                    ..default()
+                }
+                .into(),
+                ..default()
+            }),
+        )
+        .add_systems(Startup, setup)
+        // .add_systems(Update, update)
+        .run();
+}
 
 #[derive(Debug, Clone, PartialEq)]
 enum TileOption {
@@ -39,7 +39,7 @@ struct Tile {
     i: usize,
     j: usize,
 }
-const DIM: usize = 3;
+const DIM: usize = 10;
 const SPRITE_SIZE: f32 = 50.;
 
 fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
@@ -409,37 +409,35 @@ fn do_collapse_tile(
     (tile.i, tile.j)
 }
 
-// fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-//     commands.spawn(Camera2d);
-// commands.spawn((
-//     Sprite::from_image(asset_server.load("down.png")),
-//     Transform::from_xyz(0., 0., 0.),
-// ));
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(Camera2d);
+    // commands.spawn((
+    //     Sprite::from_image(asset_server.load("down.png")),
+    //     Transform::from_xyz(0., 0., 0.),
+    // ));
 
-// let mut sprites: Vec<Sprite> = vec![];
+    let mut sprites: Vec<Sprite> = vec![];
 
-// let mut sprite_0: Sprite = Sprite::from_image(asset_server.load("blank.png"));
-// sprite_0.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
-// sprites.push(sprite_0);
+    let mut sprite_0: Sprite = Sprite::from_image(asset_server.load("blank.png"));
+    sprite_0.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
+    sprites.push(sprite_0);
 
-// let mut sprite_1: Sprite = Sprite::from_image(asset_server.load("down.png"));
-// sprite_1.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
-// sprites.push(sprite_1);
+    let mut sprite_1: Sprite = Sprite::from_image(asset_server.load("down.png"));
+    sprite_1.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
+    sprites.push(sprite_1);
 
-// let mut sprite_2: Sprite = Sprite::from_image(asset_server.load("left.png"));
-// sprite_2.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
-// sprites.push(sprite_2);
+    let mut sprite_2: Sprite = Sprite::from_image(asset_server.load("left.png"));
+    sprite_2.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
+    sprites.push(sprite_2);
 
-// let mut sprite_3: Sprite = Sprite::from_image(asset_server.load("right.png"));
-// sprite_3.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
-// sprites.push(sprite_3);
+    let mut sprite_3: Sprite = Sprite::from_image(asset_server.load("right.png"));
+    sprite_3.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
+    sprites.push(sprite_3);
 
-// let mut sprite_4: Sprite = Sprite::from_image(asset_server.load("up.png"));
-// sprite_4.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
-// sprites.push(sprite_4);
-// }
+    let mut sprite_4: Sprite = Sprite::from_image(asset_server.load("up.png"));
+    sprite_4.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
+    sprites.push(sprite_4);
 
-fn main() {
     loop {
         println!("begin new loop iteration...");
         // first stage - fill grid and pick one random cell, collapse it:
@@ -501,43 +499,48 @@ fn main() {
 
         println!("grid after all cells collapsed {:?}", grid);
 
+        // last stage, just display results
+        let mut y_shift = 0.;
+        for i in 0..DIM {
+            let mut x_shift = 0.;
+            for j in 0..DIM {
+                let grid_ind: usize = i * DIM + j;
+                let grid_cell: &Tile = &grid[grid_ind];
+                if grid_cell.collapsed && grid_cell.options.len() == 1 {
+                    let tile_option: &TileOption = &grid_cell.options[0];
+                    let sprite: &Sprite = match tile_option {
+                        TileOption::Blank => &sprites[0],
+                        TileOption::Down => &sprites[1],
+                        TileOption::Left => &sprites[2],
+                        TileOption::Right => &sprites[3],
+                        TileOption::Up => &sprites[4],
+                    };
+                    commands.spawn((sprite.clone(), Transform::from_xyz(x_shift, -y_shift, 0.)));
+                } else {
+                    panic!(
+                        "ERROR: {}, {}, i={i}, j={j}, TileOptions={:?}",
+                        grid_cell.collapsed,
+                        grid_cell.options.len(),
+                        grid_cell.options
+                    );
+                }
+                x_shift += SPRITE_SIZE;
+            }
+            y_shift += SPRITE_SIZE;
+        }
+
+        break;
         use std::{thread, time};
 
         let sec = time::Duration::from_millis(1000);
 
         thread::sleep(sec);
     }
-
-    // // last stage, just display results
-    // let mut y_shift = 0.;
-    // for i in 0..DIM {
-    //     let mut x_shift = 0.;
-    //     for j in 0..DIM {
-    //         let grid_ind: usize = i * DIM + j;
-    //         let grid_cell: &Tile = &grid[grid_ind];
-    //         if grid_cell.collapsed && grid_cell.options.len() == 1 {
-    //             let tile_option: &TileOption = &grid_cell.options[0];
-    //             let sprite: &Sprite = match tile_option {
-    //                 TileOption::Blank => &sprites[0],
-    //                 TileOption::Down => &sprites[1],
-    //                 TileOption::Left => &sprites[2],
-    //                 TileOption::Right => &sprites[3],
-    //                 TileOption::Up => &sprites[4],
-    //             };
-    //             commands.spawn((sprite.clone(), Transform::from_xyz(x_shift, -y_shift, 0.)));
-    //         } else {
-    //             panic!(
-    //                 "ERROR: {}, {}, i={i}, j={j}, TileOptions={:?}",
-    //                 grid_cell.collapsed,
-    //                 grid_cell.options.len(),
-    //                 grid_cell.options
-    //             );
-    //         }
-    //         x_shift += SPRITE_SIZE;
-    //     }
-    //     y_shift += SPRITE_SIZE;
-    // }
 }
+
+// fn main() {
+
+// }
 
 fn update(_time: Res<Time>, mut sprite_position: Query<&mut Sprite>) {
     for transform in &mut sprite_position {
