@@ -4,6 +4,7 @@ use rand::prelude::*;
 use bevy::prelude::*;
 use bevy::render::settings::*;
 use bevy::render::RenderPlugin;
+use bevy::window::PrimaryWindow;
 
 fn main() {
     App::new()
@@ -24,12 +25,18 @@ fn main() {
 }
 
 // This system prints messages when you press or release the left mouse button:
-fn mouse_click_system(mouse_button_input: Res<ButtonInput<MouseButton>>) {
+fn mouse_click_system(mouse_button_input: Res<ButtonInput<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>,) {
     // if mouse_button_input.pressed(MouseButton::Left) {
     //     info!("left mouse currently pressed");
     // }
     if mouse_button_input.just_pressed(MouseButton::Left) {
         info!("left mouse just pressed");
+        // Games typically only have one window (the primary window)
+        if let Some(position) = q_windows.single().cursor_position() {
+            println!("Cursor is inside the primary window, at {:?}", position);
+        } else {
+            println!("Cursor is not in the game window.");
+        }
     }
 }
 
