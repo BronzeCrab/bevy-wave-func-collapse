@@ -1,14 +1,19 @@
-// use std::{thread, time};
 use rand::prelude::*;
 
 use bevy::prelude::*;
+
 use bevy::render::settings::*;
 use bevy::render::RenderPlugin;
-use bevy::window::PrimaryWindow;
+
+// #[derive(Component, Debug)]
+// struct Position {
+//     x: f32,
+//     y: f32,
+// }
 
 fn main() {
     App::new()
-        .add_plugins(
+        .add_plugins((
             DefaultPlugins.set(RenderPlugin {
                 render_creation: WgpuSettings {
                     backends: Some(Backends::VULKAN),
@@ -17,26 +22,18 @@ fn main() {
                 .into(),
                 ..default()
             }),
-        )
+            MeshPickingPlugin,
+        ))
         .add_systems(Startup, setup)
-        .add_systems(Update, mouse_click_system)
+        // .add_systems(Update, mouse_click_system)
         // .add_systems(Update, update)
         .run();
 }
 
-// This system prints messages when you press or release the left mouse button:
-fn mouse_click_system(
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-) {
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        info!("left mouse just pressed");
-        // Games typically only have one window (the primary window)
-        if let Some(position) = q_windows.single().cursor_position() {
-            println!("Cursor is inside the primary window, at {:?}", position);
-        } else {
-            println!("Cursor is not in the game window.");
-        }
+fn on_click(click: Trigger<Pointer<Click>>, mut transforms: Query<&mut Transform>) {
+    println!("click");
+    if let Ok(mut transform) = transforms.get_mut(click.target) {
+        transform.translation.x = 100.0;
     }
 }
 
@@ -57,7 +54,7 @@ struct Tile {
     i: usize,
     j: usize,
 }
-const DIM: usize = 3;
+const DIM: usize = 2;
 const SPRITE_SIZE: f32 = 50.;
 
 fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
@@ -440,15 +437,17 @@ fn setup(
     for _ in 0..DIM {
         for _ in 0..DIM {
             let color = Color::BLACK;
-            commands.spawn((
-                Mesh2d(meshes.add(Rectangle::new(50.0, 50.0))),
-                MeshMaterial2d(materials.add(color)),
-                Transform::from_xyz(x_start, y_start, 0.0),
-            ));
-            x_start += 60.0;
+            commands
+                .spawn((
+                    Mesh2d(meshes.add(Rectangle::new(SPRITE_SIZE, SPRITE_SIZE))),
+                    MeshMaterial2d(materials.add(color)),
+                    Transform::from_xyz(x_start, y_start, 0.0),
+                ))
+                .observe(on_click);
+            x_start += SPRITE_SIZE + 10.0;
         }
         x_start = 0.0;
-        y_start += 60.0;
+        y_start += SPRITE_SIZE + 10.0;
     }
 
     let mut sprites: Vec<Sprite> = vec![];
