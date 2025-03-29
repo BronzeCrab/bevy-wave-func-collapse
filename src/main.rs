@@ -427,7 +427,6 @@ fn do_collapse_tile(
     (tile.i, tile.j)
 }
 
-
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -438,17 +437,13 @@ fn setup(
 
     let mut x_start: f32 = 0.0;
     let mut y_start: f32 = 0.0;
-    for i in 0..DIM {
-        for j in 0..DIM {
+    for _ in 0..DIM {
+        for _ in 0..DIM {
             let color = Color::BLACK;
             commands.spawn((
                 Mesh2d(meshes.add(Rectangle::new(50.0, 50.0))),
                 MeshMaterial2d(materials.add(color)),
-                Transform::from_xyz(
-                    x_start,
-                    y_start,
-                    0.0,
-                ),
+                Transform::from_xyz(x_start, y_start, 0.0),
             ));
             x_start += 60.0;
         }
