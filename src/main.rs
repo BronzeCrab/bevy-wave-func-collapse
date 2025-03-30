@@ -5,12 +5,6 @@ use bevy::prelude::*;
 use bevy::render::settings::*;
 use bevy::render::RenderPlugin;
 
-// #[derive(Component, Debug)]
-// struct Position {
-//     x: f32,
-//     y: f32,
-// }
-
 fn main() {
     App::new()
         .add_plugins((
@@ -178,9 +172,14 @@ fn on_click(
     click: Trigger<Pointer<Click>>,
     mut transforms: Query<&mut Transform>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
 ) {
     if let Ok(transform) = transforms.get_mut(click.target) {
         commands.entity(click.target).remove::<Mesh2d>();
+        commands.spawn((
+            Sprite::from_image(asset_server.load("up.png")),
+            Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
+        ));
     }
 }
 
