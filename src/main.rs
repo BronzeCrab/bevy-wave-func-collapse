@@ -5,6 +5,9 @@ use bevy::prelude::*;
 use bevy::render::settings::*;
 use bevy::render::RenderPlugin;
 
+#[derive(Component)]
+struct Sprites(Vec<Sprite>);
+
 fn main() {
     App::new()
         .add_plugins((
@@ -71,6 +74,8 @@ fn setup(
     let mut sprite_4: Sprite = Sprite::from_image(asset_server.load("up.png"));
     sprite_4.custom_size = Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE));
     sprites.push(sprite_4);
+
+    commands.spawn(Sprites(sprites));
 
     // // first stage - fill grid and pick one random cell, collapse it:
     // let mut grid: Vec<Tile> = vec![];
@@ -172,14 +177,16 @@ fn on_click(
     click: Trigger<Pointer<Click>>,
     mut transforms: Query<&mut Transform>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    spites_q: Query<&Sprites>,
 ) {
     if let Ok(transform) = transforms.get_mut(click.target) {
         commands.entity(click.target).remove::<Mesh2d>();
-        commands.spawn((
-            Sprite::from_image(asset_server.load("up.png")),
-            Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
-        ));
+        for sprites in &spites_q {
+            commands.spawn((
+                sprites.0[0].clone(),
+                Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
+            ));
+        }
     }
 }
 
