@@ -8,6 +8,11 @@ This Rust Bevy game, based on wave function collapse algorithm
 cargo run
 ```
 
-## references
+## References
+
+All assests and idea are stolen from Daniel Shiffman
+(coding train channel) video:
 
 https://www.youtube.com/watch?v=rI_y2GAlQFM
+
+https://github.com/CodingTrain/Wave-Function-Collapse
