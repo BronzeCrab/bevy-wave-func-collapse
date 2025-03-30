@@ -181,12 +181,13 @@ fn on_click(
 ) {
     if let Ok(transform) = transforms.get_mut(click.target) {
         commands.entity(click.target).remove::<Mesh2d>();
-        for sprites in &spites_q {
-            commands.spawn((
-                sprites.0[0].clone(),
-                Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
-            ));
-        }
+        let spr_struct = spites_q.single();
+        let r_option_index: u8 = rand::rng().random_range(0..=NUM_OF_OPTIONS - 1);
+        let sprite: &Sprite = &spr_struct.0[r_option_index as usize];
+        commands.spawn((
+            sprite.clone(),
+            Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
+        ));
     }
 }
 

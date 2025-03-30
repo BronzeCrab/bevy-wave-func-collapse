@@ -11,7 +11,7 @@ cargo run
 ## References
 
 All assests and idea are stolen from Daniel Shiffman
-(coding train channel) video:
+(The Coding Train channel) video:
 
 https://www.youtube.com/watch?v=rI_y2GAlQFM
 
