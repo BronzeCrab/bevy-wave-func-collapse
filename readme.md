@@ -1,6 +1,6 @@
 # What is it
 
-This Rust Bevy game, based on wafe function collapse algorithm
+This Rust Bevy game, based on wave function collapse algorithm
 
 ## How to run it
 
