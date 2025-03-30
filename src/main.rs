@@ -8,6 +8,36 @@ use bevy::render::RenderPlugin;
 #[derive(Component)]
 struct Sprites(Vec<Sprite>);
 
+#[derive(Debug, Clone, PartialEq)]
+enum TileOption {
+    Blank,
+    Down,
+    Left,
+    Right,
+    Up,
+}
+
+#[derive(Debug, Clone)]
+struct Tile {
+    collapsed: bool,
+    options: Vec<TileOption>,
+    i: usize,
+    j: usize,
+    can_be_collapsed: bool,
+}
+const DIM: usize = 6;
+const SPRITE_SIZE: f32 = 50.;
+
+#[derive(Component)]
+struct Grid(Vec<Tile>);
+
+#[derive(Component)]
+struct RectangleIndexes {
+    grid_ind: usize,
+    i: usize,
+    j: usize,
+}
+
 fn main() {
     App::new()
         .add_plugins((
@@ -22,7 +52,6 @@ fn main() {
             MeshPickingPlugin,
         ))
         .add_systems(Startup, setup)
-        // .add_systems(Update, mouse_click_system)
         // .add_systems(Update, update)
         .run();
 }
@@ -34,24 +63,6 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn(Camera2d);
-
-    let mut x_start: f32 = 0.0;
-    let mut y_start: f32 = 0.0;
-    for _ in 0..DIM {
-        for _ in 0..DIM {
-            let color = Color::BLACK;
-            commands
-                .spawn((
-                    Mesh2d(meshes.add(Rectangle::new(SPRITE_SIZE, SPRITE_SIZE))),
-                    MeshMaterial2d(materials.add(color)),
-                    Transform::from_xyz(x_start, y_start, 0.0),
-                ))
-                .observe(on_click);
-            x_start += SPRITE_SIZE + 10.0;
-        }
-        x_start = 0.0;
-        y_start += SPRITE_SIZE + 10.0;
-    }
 
     let mut sprites: Vec<Sprite> = vec![];
 
@@ -77,139 +88,109 @@ fn setup(
 
     commands.spawn(Sprites(sprites));
 
-    // // first stage - fill grid and pick one random cell, collapse it:
-    // let mut grid: Vec<Tile> = vec![];
-    // let random_cell_i: usize = rand::rng().random_range(0..=DIM - 1);
-    // let random_cell_j: usize = rand::rng().random_range(0..=DIM - 1);
-    // for i in 0..DIM {
-    //     for j in 0..DIM {
-    //         if i == random_cell_i && j == random_cell_j {
-    //             let r_option_index: u8 = rand::rng().random_range(0..=NUM_OF_OPTIONS - 1);
-    //             let opt: TileOption = match r_option_index {
-    //                 0 => TileOption::Blank,
-    //                 1 => TileOption::Down,
-    //                 2 => TileOption::Left,
-    //                 3 => TileOption::Right,
-    //                 4 => TileOption::Up,
-    //                 _ => panic!(),
-    //             };
-    //             grid.push(Tile {
-    //                 collapsed: true,
-    //                 options: vec![opt],
-    //                 i: i,
-    //                 j: j,
-    //             });
-    //         } else {
-    //             grid.push(Tile {
-    //                 collapsed: false,
-    //                 options: vec![
-    //                     TileOption::Blank,
-    //                     TileOption::Down,
-    //                     TileOption::Left,
-    //                     TileOption::Right,
-    //                     TileOption::Up,
-    //                 ],
-    //                 i: i,
-    //                 j: j,
-    //             });
-    //         }
-    //     }
-    // }
-
-    // println!("Collapsed cell's i={}, j={}", random_cell_i, random_cell_j);
-
-    // // second stage, here we need to update entropy of near cells:
-    // update_near_cells_options(&mut grid, random_cell_i, random_cell_j);
-    // println!("grid after update_near_cells_TileOptions {:?}", grid);
-
-    // println!("entering the loop...");
-    // // third stage, main loop
-    // while !all_cell_collapsed(&grid) {
-    //     let tile_ind: usize = find_random_tile_with_low_entropy(&grid);
-    //     shuffle_tile_options(&mut grid, tile_ind);
-    //     let tile_opt: TileOption = find_proper_tile_option(&grid, tile_ind);
-    //     let i_j_tuple: (usize, usize) = do_collapse_tile(&mut grid, tile_ind, tile_opt);
-    //     println!("grid after do_collapse_tile {:?}", grid);
-    //     update_near_cells_options(&mut grid, i_j_tuple.0, i_j_tuple.1);
-    //     println!("grid after update_near_cells_options {:?}", grid);
-    // }
-
-    // println!("grid after all cells collapsed {:?}", grid);
-
-    // // last stage, just display results
-    // let mut y_shift = 0.;
-    // for i in 0..DIM {
-    //     let mut x_shift = 0.;
-    //     for j in 0..DIM {
-    //         let grid_ind: usize = i * DIM + j;
-    //         let grid_cell: &Tile = &grid[grid_ind];
-    //         if grid_cell.collapsed && grid_cell.options.len() == 1 {
-    //             let tile_option: &TileOption = &grid_cell.options[0];
-    //             let sprite: &Sprite = match tile_option {
-    //                 TileOption::Blank => &sprites[0],
-    //                 TileOption::Down => &sprites[1],
-    //                 TileOption::Left => &sprites[2],
-    //                 TileOption::Right => &sprites[3],
-    //                 TileOption::Up => &sprites[4],
-    //             };
-    //             commands.spawn((sprite.clone(), Transform::from_xyz(x_shift, -y_shift, 0.)));
-    //         } else {
-    //             panic!(
-    //                 "ERROR: {}, {}, i={i}, j={j}, TileOptions={:?}",
-    //                 grid_cell.collapsed,
-    //                 grid_cell.options.len(),
-    //                 grid_cell.options
-    //             );
-    //         }
-    //         x_shift += SPRITE_SIZE;
-    //     }
-    //     y_shift += SPRITE_SIZE;
-    // }
-}
-
-fn update(_time: Res<Time>, mut sprite_position: Query<&mut Sprite>) {
-    for transform in &mut sprite_position {
-        println!("{:?}", transform);
+    let mut x_start: f32 = 0.0;
+    let mut y_start: f32 = 0.0;
+    for i in 0..DIM {
+        for j in 0..DIM {
+            let color = Color::BLACK;
+            let grid_ind: usize = i * DIM + j;
+            commands
+                .spawn((
+                    Mesh2d(meshes.add(Rectangle::new(SPRITE_SIZE, SPRITE_SIZE))),
+                    MeshMaterial2d(materials.add(color)),
+                    Transform::from_xyz(x_start, y_start, 0.0),
+                    RectangleIndexes {
+                        grid_ind: grid_ind,
+                        i: i,
+                        j: j,
+                    },
+                ))
+                .observe(on_click);
+            x_start += SPRITE_SIZE + 10.0;
+        }
+        x_start = 0.0;
+        y_start -= SPRITE_SIZE + 10.0;
     }
+
+    // first stage - fill grid:
+    let mut grid: Vec<Tile> = vec![];
+    for i in 0..DIM {
+        for j in 0..DIM {
+            grid.push(Tile {
+                collapsed: false,
+                options: vec![
+                    TileOption::Blank,
+                    TileOption::Down,
+                    TileOption::Left,
+                    TileOption::Right,
+                    TileOption::Up,
+                ],
+                i: i,
+                j: j,
+                can_be_collapsed: true,
+            });
+        }
+    }
+
+    commands.spawn(Grid(grid));
 }
 
 fn on_click(
     click: Trigger<Pointer<Click>>,
     mut transforms: Query<&mut Transform>,
+    mut rect_indexes: Query<&RectangleIndexes>,
     mut commands: Commands,
     spites_q: Query<&Sprites>,
+    mut grid_q: Query<&mut Grid>,
 ) {
-    if let Ok(transform) = transforms.get_mut(click.target) {
-        commands.entity(click.target).remove::<Mesh2d>();
-        let spr_struct = spites_q.single();
-        let r_option_index: u8 = rand::rng().random_range(0..=NUM_OF_OPTIONS - 1);
-        let sprite: &Sprite = &spr_struct.0[r_option_index as usize];
-        commands.spawn((
-            sprite.clone(),
-            Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
-        ));
+    let rect_indexes: &RectangleIndexes = rect_indexes.get_mut(click.target).unwrap();
+    let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
+
+    if grid[rect_indexes.grid_ind].can_be_collapsed {
+        if let Ok(transform) = transforms.get_mut(click.target) {
+            shuffle_tile_options(&mut grid[rect_indexes.grid_ind]);
+            let tile_opt: TileOption = find_proper_tile_option(grid, &grid[rect_indexes.grid_ind]);
+
+            commands.entity(click.target).remove::<Mesh2d>();
+            let spr_struct = spites_q.single();
+            let tile_option_index = match tile_opt {
+                TileOption::Blank => 0,
+                TileOption::Down => 1,
+                TileOption::Left => 2,
+                TileOption::Right => 3,
+                TileOption::Up => 4,
+            };
+            let sprite: &Sprite = &spr_struct.0[tile_option_index];
+            commands.spawn((
+                sprite.clone(),
+                Transform::from_xyz(transform.translation.x, transform.translation.y, 0.),
+            ));
+
+            println!("rect_index, {:?}", rect_indexes.grid_ind);
+
+            grid[rect_indexes.grid_ind].options = vec![tile_opt];
+            grid[rect_indexes.grid_ind].collapsed = true;
+
+            if !all_cell_collapsed(grid) {
+                update_near_cells_options(&mut grid, rect_indexes.i, rect_indexes.j);
+                println!("grid after update_near_cells_TileOptions {:?}", grid);
+                find_and_mark_random_tile_with_low_entropy(&mut grid);
+            } else {
+                println!("All cells are collapsed!");
+            }
+
+            println!("grid after click {:?}", grid);
+        }
+    } else {
+        println!("Can't collide this cell yet");
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum TileOption {
-    Blank,
-    Down,
-    Left,
-    Right,
-    Up,
-}
-const NUM_OF_OPTIONS: u8 = 5;
-
-#[derive(Debug, Clone)]
-struct Tile {
-    collapsed: bool,
-    options: Vec<TileOption>,
-    i: usize,
-    j: usize,
-}
-const DIM: usize = 2;
-const SPRITE_SIZE: f32 = 50.;
+// fn update(_time: Res<Time>, mut sprite_position: Query<&mut Sprite>) {
+//     for transform in &mut sprite_position {
+//         println!("{:?}", transform);
+//     }
+// }
 
 fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
     let mut res: Vec<TileOption> = vec![];
@@ -350,7 +331,7 @@ fn all_cell_collapsed(grid: &Vec<Tile>) -> bool {
     return true;
 }
 
-fn find_random_tile_with_low_entropy(grid: &Vec<Tile>) -> usize {
+fn find_and_mark_random_tile_with_low_entropy(grid: &mut Vec<Tile>) {
     let mut lowest_entropy: usize = usize::MAX;
     for i in 0..DIM {
         for j in 0..DIM {
@@ -368,32 +349,19 @@ fn find_random_tile_with_low_entropy(grid: &Vec<Tile>) -> usize {
     for i in 0..DIM {
         for j in 0..DIM {
             let grid_ind: usize = i * DIM + j;
-            let grid_cell: &Tile = &grid[grid_ind];
+            let grid_cell: &mut Tile = &mut grid[grid_ind];
             if !grid_cell.collapsed && grid_cell.options.len() == lowest_entropy {
                 indexes_2_collapse.push(grid_ind);
+                grid_cell.can_be_collapsed = true;
+            } else if !grid_cell.collapsed {
+                grid_cell.can_be_collapsed = false;
             }
         }
     }
 
     if indexes_2_collapse.len() <= 0 {
-        panic!("ERROR: indexes_2_collapse is empty");
+        panic!("ERROR: indexes_2_collapse is empty, grid is {:?}", grid);
     }
-    let r_index: usize = rand::rng().random_range(0..=indexes_2_collapse.len() - 1);
-    let ind_2_collapase: usize = indexes_2_collapse[r_index];
-
-    return ind_2_collapase;
-}
-
-fn shuffle_tile_options(grid: &mut Vec<Tile>, tile_ind: usize) {
-    let tile: &mut Tile = &mut grid[tile_ind];
-
-    if tile.options.len() <= 0 {
-        panic!("ERROR: tile {:?} has zero TileOptions", tile);
-    }
-    // here we need not just take random, but also check if this
-    // TileOptions is indeed possible!
-    let mut rng: ThreadRng = rand::rng();
-    tile.options.shuffle(&mut rng);
 }
 
 fn check_side(
@@ -484,10 +452,9 @@ fn check_side(
     side_is_ok
 }
 
-fn find_proper_tile_option(grid: &Vec<Tile>, tile_ind: usize) -> TileOption {
+fn find_proper_tile_option(grid: &Vec<Tile>, tile_to_collapse: &Tile) -> TileOption {
     let mut opt_to_collapse: Option<TileOption> = None;
 
-    let tile_to_collapse: &Tile = &grid[tile_ind];
     // check opt for possible collapse
     for i in 0..DIM {
         for j in 0..DIM {
@@ -567,13 +534,10 @@ fn find_proper_tile_option(grid: &Vec<Tile>, tile_ind: usize) -> TileOption {
     }
 }
 
-fn do_collapse_tile(
-    grid: &mut Vec<Tile>,
-    tile_ind: usize,
-    opt_to_collapse: TileOption,
-) -> (usize, usize) {
-    let tile: &mut Tile = &mut grid[tile_ind];
-    tile.options = vec![opt_to_collapse];
-    tile.collapsed = true;
-    (tile.i, tile.j)
+fn shuffle_tile_options(tile: &mut Tile) {
+    if tile.options.len() <= 0 {
+        panic!("ERROR: tile {:?} has zero TileOptions", tile);
+    }
+    let mut rng: ThreadRng = rand::rng();
+    tile.options.shuffle(&mut rng);
 }
