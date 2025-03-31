@@ -64,6 +64,29 @@ fn setup(
 ) {
     commands.spawn(Camera2d);
 
+    // Text with one section
+    commands.spawn((
+        // Accepts a `String` or any type that converts into a `String`, such as `&str`
+        Text::new("hello\nbevy!"),
+        TextFont {
+            // This font is loaded and will be used instead of the default font.
+            // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+            font_size: 32.0,
+            ..default()
+        },
+        // Set the justification of the Text
+        TextLayout::new_with_justify(JustifyText::Center),
+        // Set the style of the Node itself.
+        Node {
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            // position_type: PositionType::Absolute,
+            top: Val::Px(10.0),
+            // right: Val::Px(5.0),
+            ..default()
+        },
+    ));
+
     let mut sprites: Vec<Sprite> = vec![];
 
     let mut sprite_0: Sprite = Sprite::from_image(asset_server.load("blank.png"));
@@ -105,7 +128,7 @@ fn setup(
                         j: j,
                     },
                 ))
-                .observe(on_click);
+                .observe(on_rect_click);
             x_start += SPRITE_SIZE + 10.0;
         }
         x_start = 0.0;
@@ -135,7 +158,7 @@ fn setup(
     commands.spawn(Grid(grid));
 }
 
-fn on_click(
+fn on_rect_click(
     click: Trigger<Pointer<Click>>,
     mut transforms: Query<&mut Transform>,
     mut rect_indexes: Query<&RectangleIndexes>,
@@ -143,6 +166,7 @@ fn on_click(
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
 ) {
+    println!("click on rect happened");
     let rect_indexes: &RectangleIndexes = rect_indexes.get_mut(click.target).unwrap();
     let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
 
@@ -180,6 +204,8 @@ fn on_click(
             }
 
             println!("grid after click {:?}", grid);
+        } else {
+            println!("Can't get transform");
         }
     } else {
         println!("Can't collide this cell yet");
