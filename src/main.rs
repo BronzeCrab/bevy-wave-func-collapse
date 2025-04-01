@@ -67,7 +67,7 @@ fn setup(
     // Text with one section
     commands.spawn((
         // Accepts a `String` or any type that converts into a `String`, such as `&str`
-        Text::new("hello\nbevy!"),
+        Text::new("hello bevy!"),
         TextFont {
             // This font is loaded and will be used instead of the default font.
             // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
@@ -78,10 +78,14 @@ fn setup(
         TextLayout::new_with_justify(JustifyText::Center),
         // Set the style of the Node itself.
         Node {
-            align_items: AlignItems::Center,
+            position_type: PositionType::Relative,
             justify_content: JustifyContent::Center,
-            // position_type: PositionType::Absolute,
+            align_items: AlignItems::Center,
+            // width: Val::Percent(10.),
+            // height: Val::Px(100.),
             top: Val::Px(10.0),
+            width: Val::Percent(100.),
+            height: Val::Px(32.0),
             // right: Val::Px(5.0),
             ..default()
         },
