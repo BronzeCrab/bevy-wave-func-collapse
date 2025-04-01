@@ -27,6 +27,7 @@ struct Tile {
 }
 const DIM: usize = 6;
 const SPRITE_SIZE: f32 = 50.;
+const GREEN: Color = Color::srgb(0., 0.2, 0.);
 
 #[derive(Component)]
 struct Grid(Vec<Tile>);
@@ -119,12 +120,11 @@ fn setup(
     let mut y_start: f32 = 0.0;
     for i in 0..DIM {
         for j in 0..DIM {
-            let color = Color::BLACK;
             let grid_ind: usize = i * DIM + j;
             commands
                 .spawn((
                     Mesh2d(meshes.add(Rectangle::new(SPRITE_SIZE, SPRITE_SIZE))),
-                    MeshMaterial2d(materials.add(color)),
+                    MeshMaterial2d(materials.add(GREEN)),
                     Transform::from_xyz(x_start, y_start, 0.0),
                     RectangleIndexes {
                         grid_ind: grid_ind,
@@ -169,8 +169,10 @@ fn on_rect_click(
     mut commands: Commands,
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
+    mut material_handles_q: Query<&MeshMaterial2d<ColorMaterial>>,
 ) {
     println!("click on rect happened");
+
     let rect_indexes: &RectangleIndexes = rect_indexes.get_mut(click.target).unwrap();
     let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
 
@@ -202,6 +204,7 @@ fn on_rect_click(
             if !all_cell_collapsed(grid) {
                 update_near_cells_options(&mut grid, rect_indexes.i, rect_indexes.j);
                 println!("grid after update_near_cells_TileOptions {:?}", grid);
+                let color = &mut material_handles_q.get_mut(click.target).unwrap();
                 find_and_mark_random_tile_with_low_entropy(&mut grid);
             } else {
                 println!("All cells are collapsed!");
