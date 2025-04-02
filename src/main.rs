@@ -69,7 +69,7 @@ fn setup(
     // Text with one section
     commands.spawn((
         // Accepts a `String` or any type that converts into a `String`, such as `&str`
-        Text::new("hello bevy!"),
+        Text::new("Plz click on some rect"),
         TextFont {
             // This font is loaded and will be used instead of the default font.
             // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
@@ -226,8 +226,13 @@ fn on_rect_click(
                         material.1.color = Color::BLACK;
                     }
                 }
+                println!("Ok, this cell is collapsed");
+                let text: &mut Text = &mut texts.get_single_mut().unwrap();
+                text.0 = String::from("Ok, this cell is collapsed");
             } else {
-                println!("All cells are collapsed!");
+                println!("All cells are collapsed, game over");
+                let text: &mut Text = &mut texts.get_single_mut().unwrap();
+                text.0 = String::from("All cells are collapsed, game over");
             }
 
             println!("grid after click {:?}", grid);
@@ -237,7 +242,7 @@ fn on_rect_click(
     } else {
         println!("Can't collide this cell yet");
         let text: &mut Text = &mut texts.get_single_mut().unwrap();
-        text.0 = String::from("lol kek");
+        text.0 = String::from("Can't collide this cell yet, plz click on green");
     }
 }
 
