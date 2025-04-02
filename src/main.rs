@@ -143,12 +143,12 @@ fn setup(
         y_start -= SPRITE_SIZE + SPRITE_GAP;
     }
 
-    // center Point to debug
-    commands.spawn((
-        Mesh2d(meshes.add(Circle::new(5.0))),
-        MeshMaterial2d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, 0.0, 0.0),
-    ));
+    // // center Point to debug
+    // commands.spawn((
+    //     Mesh2d(meshes.add(Circle::new(5.0))),
+    //     MeshMaterial2d(materials.add(Color::WHITE)),
+    //     Transform::from_xyz(0.0, 0.0, 0.0),
+    // ));
 
     // first stage - fill grid:
     let mut grid: Vec<Tile> = vec![];
@@ -181,6 +181,7 @@ fn on_rect_click(
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut texts: Query<&mut Text>,
 ) {
     println!("click on rect happened");
 
@@ -235,6 +236,8 @@ fn on_rect_click(
         }
     } else {
         println!("Can't collide this cell yet");
+        let text: &mut Text = &mut texts.get_single_mut().unwrap();
+        text.0 = String::from("lol kek");
     }
 }
 
