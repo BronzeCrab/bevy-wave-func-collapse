@@ -188,6 +188,8 @@ fn on_rect_click(
     let rect_indexes: &RectangleIndexes = rect_indexes_q.get_mut(click.target).unwrap();
     let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
 
+    let text: &mut Text = &mut texts.get_single_mut().unwrap();
+
     if grid[rect_indexes.grid_ind].can_be_collapsed {
         if let Ok(transform) = transforms.get_mut(click.target) {
             shuffle_tile_options(&mut grid[rect_indexes.grid_ind]);
@@ -226,12 +228,8 @@ fn on_rect_click(
                         material.1.color = Color::BLACK;
                     }
                 }
-                println!("Ok, this cell is collapsed");
-                let text: &mut Text = &mut texts.get_single_mut().unwrap();
                 text.0 = String::from("Ok, this cell is collapsed");
             } else {
-                println!("All cells are collapsed, game over");
-                let text: &mut Text = &mut texts.get_single_mut().unwrap();
                 text.0 = String::from("All cells are collapsed, game over");
             }
 
@@ -240,8 +238,6 @@ fn on_rect_click(
             println!("Can't get transform");
         }
     } else {
-        println!("Can't collide this cell yet");
-        let text: &mut Text = &mut texts.get_single_mut().unwrap();
         text.0 = String::from("Can't collide this cell yet, plz click on green");
     }
 }
