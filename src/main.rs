@@ -25,8 +25,9 @@ struct Tile {
     j: usize,
     can_be_collapsed: bool,
 }
-const DIM: usize = 6;
+const DIM: usize = 7;
 const SPRITE_SIZE: f32 = 50.;
+const SPRITE_GAP: f32 = 10.0;
 const GREEN: Color = Color::srgb(0., 0.2, 0.);
 
 #[derive(Component)]
@@ -116,8 +117,11 @@ fn setup(
 
     commands.spawn(Sprites(sprites));
 
-    let mut x_start: f32 = 0.0;
-    let mut y_start: f32 = 0.0;
+    let mut half_of_matrix_len: f32 =
+        ((DIM as f32) * SPRITE_SIZE + ((DIM - 1) as f32) * SPRITE_GAP) / 2.0;
+    half_of_matrix_len -= SPRITE_SIZE / 2.0;
+    let mut x_start: f32 = 0.0 - half_of_matrix_len;
+    let mut y_start: f32 = 0.0 + half_of_matrix_len;
     for i in 0..DIM {
         for j in 0..DIM {
             let grid_ind: usize = i * DIM + j;
@@ -133,11 +137,18 @@ fn setup(
                     },
                 ))
                 .observe(on_rect_click);
-            x_start += SPRITE_SIZE + 10.0;
+            x_start += SPRITE_SIZE + SPRITE_GAP;
         }
-        x_start = 0.0;
-        y_start -= SPRITE_SIZE + 10.0;
+        x_start = 0.0 - half_of_matrix_len;
+        y_start -= SPRITE_SIZE + SPRITE_GAP;
     }
+
+    // center Point to debug
+    commands.spawn((
+        Mesh2d(meshes.add(Circle::new(5.0))),
+        MeshMaterial2d(materials.add(Color::WHITE)),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
 
     // first stage - fill grid:
     let mut grid: Vec<Tile> = vec![];
