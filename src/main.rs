@@ -165,15 +165,15 @@ fn setup(
 fn on_rect_click(
     click: Trigger<Pointer<Click>>,
     mut transforms: Query<&mut Transform>,
-    mut rect_indexes: Query<&RectangleIndexes>,
+    mut rect_indexes_q: Query<&RectangleIndexes>,
     mut commands: Commands,
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
-    mut material_handles_q: Query<&MeshMaterial2d<ColorMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     println!("click on rect happened");
 
-    let rect_indexes: &RectangleIndexes = rect_indexes.get_mut(click.target).unwrap();
+    let rect_indexes: &RectangleIndexes = rect_indexes_q.get_mut(click.target).unwrap();
     let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
 
     if grid[rect_indexes.grid_ind].can_be_collapsed {
@@ -204,8 +204,16 @@ fn on_rect_click(
             if !all_cell_collapsed(grid) {
                 update_near_cells_options(&mut grid, rect_indexes.i, rect_indexes.j);
                 println!("grid after update_near_cells_TileOptions {:?}", grid);
-                let color = &mut material_handles_q.get_mut(click.target).unwrap();
-                find_and_mark_random_tile_with_low_entropy(&mut grid);
+
+                let indexes_2_collapse: Vec<usize> =
+                    find_and_mark_random_tile_with_low_entropy(&mut grid);
+                for (ind, material) in materials.iter_mut().enumerate() {
+                    if indexes_2_collapse.contains(&ind) {
+                        material.1.color = GREEN;
+                    } else {
+                        material.1.color = Color::BLACK;
+                    }
+                }
             } else {
                 println!("All cells are collapsed!");
             }
@@ -364,7 +372,7 @@ fn all_cell_collapsed(grid: &Vec<Tile>) -> bool {
     return true;
 }
 
-fn find_and_mark_random_tile_with_low_entropy(grid: &mut Vec<Tile>) {
+fn find_and_mark_random_tile_with_low_entropy(grid: &mut Vec<Tile>) -> Vec<usize> {
     let mut lowest_entropy: usize = usize::MAX;
     for i in 0..DIM {
         for j in 0..DIM {
@@ -395,6 +403,7 @@ fn find_and_mark_random_tile_with_low_entropy(grid: &mut Vec<Tile>) {
     if indexes_2_collapse.len() <= 0 {
         panic!("ERROR: indexes_2_collapse is empty, grid is {:?}", grid);
     }
+    indexes_2_collapse
 }
 
 fn check_side(
