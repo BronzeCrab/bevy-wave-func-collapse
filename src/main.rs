@@ -78,18 +78,10 @@ fn setup(
             ..default()
         },
         // Set the justification of the Text
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(JustifyText::Right),
         // Set the style of the Node itself.
         Node {
-            position_type: PositionType::Relative,
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            // width: Val::Percent(10.),
-            // height: Val::Px(100.),
-            top: Val::Px(10.0),
-            width: Val::Percent(100.),
-            height: Val::Px(32.0),
-            // right: Val::Px(5.0),
+            justify_self: JustifySelf::Center,
             ..default()
         },
         Label,
@@ -149,14 +141,9 @@ fn setup(
         .spawn((
             Button,
             Node {
-                width: Val::Px(150.0),
-                height: Val::Px(65.0),
                 top: Val::Px(60.0),
                 border: UiRect::all(Val::Px(5.0)),
-                // horizontally center child text
-                justify_content: JustifyContent::Center,
-                // vertically center child text
-                align_items: AlignItems::Center,
+                justify_self: JustifySelf::Center,
                 ..default()
             },
             BorderColor(Color::BLACK),
@@ -164,7 +151,7 @@ fn setup(
         ))
         .with_children(|builder| {
             builder.spawn((
-                Text::new("Button"),
+                Text::new("Restart"),
                 TextFont {
                     font_size: 32.0,
                     ..default()
