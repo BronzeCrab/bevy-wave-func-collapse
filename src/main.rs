@@ -3,6 +3,7 @@ use rand::prelude::*;
 use bevy::prelude::*;
 
 use bevy::render::settings::*;
+
 use bevy::render::RenderPlugin;
 
 #[derive(Component)]
@@ -54,7 +55,7 @@ fn main() {
             MeshPickingPlugin,
         ))
         .add_systems(Startup, setup)
-        // .add_systems(Update, update)
+        .add_systems(Update, button_system)
         .run();
 }
 
@@ -91,6 +92,7 @@ fn setup(
             // right: Val::Px(5.0),
             ..default()
         },
+        Label,
     ));
 
     let mut sprites: Vec<Sprite> = vec![];
@@ -143,12 +145,33 @@ fn setup(
         y_start -= SPRITE_SIZE + SPRITE_GAP;
     }
 
-    // // center Point to debug
-    // commands.spawn((
-    //     Mesh2d(meshes.add(Circle::new(5.0))),
-    //     MeshMaterial2d(materials.add(Color::WHITE)),
-    //     Transform::from_xyz(0.0, 0.0, 0.0),
-    // ));
+    commands
+        .spawn((
+            Button,
+            Node {
+                width: Val::Px(150.0),
+                height: Val::Px(65.0),
+                top: Val::Px(60.0),
+                border: UiRect::all(Val::Px(5.0)),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BorderColor(Color::BLACK),
+            BorderRadius::MAX,
+        ))
+        .with_children(|builder| {
+            builder.spawn((
+                Text::new("Button"),
+                TextFont {
+                    font_size: 32.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+            ));
+        });
 
     // first stage - fill grid:
     let mut grid: Vec<Tile> = vec![];
@@ -181,14 +204,14 @@ fn on_rect_click(
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut texts: Query<&mut Text>,
+    mut text_query: Query<&mut Text, With<Label>>,
 ) {
+    let mut text = text_query.get_single_mut().unwrap();
+
     println!("click on rect happened");
 
     let rect_indexes: &RectangleIndexes = rect_indexes_q.get_mut(click.target).unwrap();
     let mut grid: &mut Vec<Tile> = &mut grid_q.single_mut().0;
-
-    let text: &mut Text = &mut texts.get_single_mut().unwrap();
 
     if grid[rect_indexes.grid_ind].can_be_collapsed {
         if let Ok(transform) = transforms.get_mut(click.target) {
@@ -242,11 +265,28 @@ fn on_rect_click(
     }
 }
 
-// fn update(_time: Res<Time>, mut sprite_position: Query<&mut Sprite>) {
-//     for transform in &mut sprite_position {
-//         println!("{:?}", transform);
-//     }
-// }
+fn button_system(
+    mut interaction_query: Query<
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &Children,
+        ),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Pressed => {
+                println!("Btn is pressed, btn txt is {:?}", text);
+            }
+            _ => {}
+        }
+    }
+}
 
 fn find_intesection(a: Vec<TileOption>, b: Vec<TileOption>) -> Vec<TileOption> {
     let mut res: Vec<TileOption> = vec![];
