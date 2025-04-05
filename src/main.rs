@@ -87,6 +87,29 @@ fn setup(
         Label,
     ));
 
+    commands
+        .spawn((
+            Button,
+            Node {
+                top: Val::Px(60.0),
+                border: UiRect::all(Val::Px(5.0)),
+                justify_self: JustifySelf::Center,
+                ..default()
+            },
+            BorderColor(Color::BLACK),
+            BorderRadius::MAX,
+        ))
+        .with_children(|builder| {
+            builder.spawn((
+                Text::new("Restart"),
+                TextFont {
+                    font_size: 32.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+            ));
+        });
+
     let mut sprites: Vec<Sprite> = vec![];
 
     let mut sprite_0: Sprite = Sprite::from_image(asset_server.load("blank.png"));
@@ -136,29 +159,6 @@ fn setup(
         x_start = 0.0 - half_of_matrix_len;
         y_start -= SPRITE_SIZE + SPRITE_GAP;
     }
-
-    commands
-        .spawn((
-            Button,
-            Node {
-                top: Val::Px(60.0),
-                border: UiRect::all(Val::Px(5.0)),
-                justify_self: JustifySelf::Center,
-                ..default()
-            },
-            BorderColor(Color::BLACK),
-            BorderRadius::MAX,
-        ))
-        .with_children(|builder| {
-            builder.spawn((
-                Text::new("Restart"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
-            ));
-        });
 
     // first stage - fill grid:
     let mut grid: Vec<Tile> = vec![];
@@ -253,16 +253,32 @@ fn on_rect_click(
 }
 
 fn button_system(
-    mut interaction_query: Query<(&Interaction, &Children), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<(&Interaction), (Changed<Interaction>, With<Button>)>,
     mut commands: Commands,
     sprite_query: Query<Entity, With<Sprite>>,
+    mesh_query: Query<Entity, With<Mesh2d>>,
+    mut text_query: Query<&mut Text, With<Label>>,
+    mut grid_query: Query<Entity, With<Grid>>,
 ) {
-    for (interaction, children) in &mut interaction_query {
+    for interaction in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 println!("Btn is pressed");
                 for entity in sprite_query.iter() {
                     commands.entity(entity).remove::<Sprite>();
+                }
+
+                for entity in mesh_query.iter() {
+                    commands.entity(entity).remove::<Mesh2d>();
+                }
+
+                text_query.get_single_mut().unwrap().0 = String::from("Plz click on some rect");
+
+                match grid_query.get_single_mut() {
+                    Ok(grid_entity) => {
+                        commands.entity(grid_entity).remove::<Grid>();
+                    }
+                    Err(_) => println!("No grid"),
                 }
             }
             _ => {}
