@@ -134,6 +134,7 @@ fn setup(
 
     commands.spawn(Sprites(sprites));
 
+    let mut grid: Vec<Tile> = vec![];
     let mut half_of_matrix_len: f32 =
         ((DIM as f32) * SPRITE_SIZE + ((DIM - 1) as f32) * SPRITE_GAP) / 2.0;
     half_of_matrix_len -= SPRITE_SIZE / 2.0;
@@ -154,16 +155,7 @@ fn setup(
                     },
                 ))
                 .observe(on_rect_click);
-            x_start += SPRITE_SIZE + SPRITE_GAP;
-        }
-        x_start = 0.0 - half_of_matrix_len;
-        y_start -= SPRITE_SIZE + SPRITE_GAP;
-    }
 
-    // first stage - fill grid:
-    let mut grid: Vec<Tile> = vec![];
-    for i in 0..DIM {
-        for j in 0..DIM {
             grid.push(Tile {
                 collapsed: false,
                 options: vec![
@@ -177,7 +169,11 @@ fn setup(
                 j: j,
                 can_be_collapsed: true,
             });
+
+            x_start += SPRITE_SIZE + SPRITE_GAP;
         }
+        x_start = 0.0 - half_of_matrix_len;
+        y_start -= SPRITE_SIZE + SPRITE_GAP;
     }
 
     commands.spawn(Grid(grid));
