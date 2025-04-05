@@ -253,22 +253,17 @@ fn on_rect_click(
 }
 
 fn button_system(
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &Children,
-        ),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut text_query: Query<&mut Text>,
+    mut interaction_query: Query<(&Interaction, &Children), (Changed<Interaction>, With<Button>)>,
+    mut commands: Commands,
+    sprite_query: Query<Entity, With<Sprite>>,
 ) {
-    for (interaction, mut color, mut border_color, children) in &mut interaction_query {
-        let mut text = text_query.get_mut(children[0]).unwrap();
+    for (interaction, children) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                println!("Btn is pressed, btn txt is {:?}", text);
+                println!("Btn is pressed");
+                for entity in sprite_query.iter() {
+                    commands.entity(entity).remove::<Sprite>();
+                }
             }
             _ => {}
         }
