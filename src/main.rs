@@ -1,9 +1,7 @@
 use rand::prelude::*;
 
 use bevy::prelude::*;
-
 use bevy::render::settings::*;
-
 use bevy::render::RenderPlugin;
 
 #[derive(Component)]
@@ -240,7 +238,8 @@ fn on_rect_click(
                 let indexes_2_collapse: Vec<usize> =
                     find_and_mark_random_tile_with_low_entropy(&mut grid);
                 for elem in mat_query.iter_mut() {
-                    let asset_id: AssetId<ColorMaterial> = elem.0 .0.id();
+                    let some_mut: Mut<'_, MeshMaterial2d<ColorMaterial>> = elem.0;
+                    let asset_id: AssetId<ColorMaterial> = some_mut.0.id();
                     if indexes_2_collapse.contains(&elem.1.grid_ind) {
                         materials.get_mut(asset_id).unwrap().color = GREEN;
                     } else {
