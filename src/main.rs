@@ -62,8 +62,8 @@ fn main() {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn(Camera2d);
 
@@ -134,6 +134,14 @@ fn setup(
 
     commands.spawn(Sprites(sprites));
 
+    make_grid(commands, meshes, materials);
+}
+
+fn make_grid(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     let mut grid: Vec<Tile> = vec![];
     let mut half_of_matrix_len: f32 =
         ((DIM as f32) * SPRITE_SIZE + ((DIM - 1) as f32) * SPRITE_GAP) / 2.0;
@@ -186,10 +194,14 @@ fn on_rect_click(
     mut commands: Commands,
     spites_q: Query<&Sprites>,
     mut grid_q: Query<&mut Grid>,
+    mut mat_query: Query<
+        (&mut MeshMaterial2d<ColorMaterial>, &RectangleIndexes),
+        With<RectangleIndexes>,
+    >,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut text_query: Query<&mut Text, With<Label>>,
 ) {
-    let mut text = text_query.get_single_mut().unwrap();
+    let mut text: Mut<'_, Text> = text_query.get_single_mut().unwrap();
 
     println!("click on rect happened");
 
@@ -227,11 +239,12 @@ fn on_rect_click(
 
                 let indexes_2_collapse: Vec<usize> =
                     find_and_mark_random_tile_with_low_entropy(&mut grid);
-                for (ind, material) in materials.iter_mut().enumerate() {
-                    if indexes_2_collapse.contains(&ind) {
-                        material.1.color = GREEN;
+                for elem in mat_query.iter_mut() {
+                    let asset_id: AssetId<ColorMaterial> = elem.0 .0.id();
+                    if indexes_2_collapse.contains(&elem.1.grid_ind) {
+                        materials.get_mut(asset_id).unwrap().color = GREEN;
                     } else {
-                        material.1.color = Color::BLACK;
+                        materials.get_mut(asset_id).unwrap().color = Color::BLACK;
                     }
                 }
                 text.0 = String::from("Ok, this cell is collapsed");
@@ -249,12 +262,15 @@ fn on_rect_click(
 }
 
 fn button_system(
-    mut interaction_query: Query<(&Interaction), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut commands: Commands,
     sprite_query: Query<Entity, With<Sprite>>,
     mesh_query: Query<Entity, With<Mesh2d>>,
     mut text_query: Query<&mut Text, With<Label>>,
     mut grid_query: Query<Entity, With<Grid>>,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<ColorMaterial>>,
+    mat_query: Query<Entity, With<MeshMaterial2d<ColorMaterial>>>,
 ) {
     for interaction in &mut interaction_query {
         match *interaction {
@@ -276,6 +292,17 @@ fn button_system(
                     }
                     Err(_) => println!("No grid"),
                 }
+
+                for entity in mat_query.iter() {
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial2d<ColorMaterial>>();
+                }
+
+                println!("materials: {:?}", materials.len());
+
+                make_grid(commands, meshes, materials);
+                break;
             }
             _ => {}
         }
